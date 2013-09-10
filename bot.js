@@ -83,7 +83,7 @@ var g33kBot = Bot.extend({
 
 	actionOp: function ( msg, channel ) {
 		// Check if admin calls the action
-		if( s.admins.indexOf(this.caller) != -1 ) {
+		if( this.checkPermission(this.caller) ) {
 			var targets = s.getArgs(msg);
 			for (var i = targets.length - 1; i >= 0; i--) {
 				c.send('MODE', channel, '+o', targets[i]);
@@ -95,7 +95,7 @@ var g33kBot = Bot.extend({
 	},
 
 	actionDeop: function ( msg, channel ) {
-		if( s.admins.indexOf(this.caller) != -1 ) {
+		if( this.checkPermission(this.caller) ) {
 			var targets = s.getArgs(msg);
 			for (var i = targets.length - 1; i >= 0; i--) {
 				c.send('MODE', channel, '-o', targets[i]);
@@ -107,7 +107,7 @@ var g33kBot = Bot.extend({
 	},
 
 	actionDie: function () {
-		if( s.admins.indexOf(this.caller) != -1 ) {
+		if( this.checkPermission(this.caller) ) {
 			process.exit(0);
 		}
 	},
@@ -146,6 +146,10 @@ var g33kBot = Bot.extend({
 		// 		-> Show title, image safety and the likes
 		// 3. generic url parser
 		// 		-> Show page title
+	},
+
+	checkPermission: function( caller ) {
+		return ( s.admins.indexOf(caller) != -1 ); // need to extend this ASAP
 	},
 
 	getArgs: function (msg) {
