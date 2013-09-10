@@ -1,5 +1,29 @@
 #!/usr/bin/env node
 
+/**
+ * g33kBot
+ *
+ * TODO:
+ * 1. Youtube bot that responds to Youtube urls (catched via regex)
+ * 2. Booru bot that responds to boory urls (requires more logic)
+ * 3. Generic url bot that returns simplified info
+ * 4. Add HTTP Server for remote commands (to be used with foobar~)
+ *
+ * Build a more flexible and secure admin/mod list (and check hostname or login status(?))
+ *
+ * TRIGGERS: (! && .)
+ *
+ * TRIGGER  (alt)		ARGS				STATUS 				ETA			DESCRIPTION 																		EXAMPLE OUTPUT
+ * OP 					USERNAMES			NEEDS POLISHING					Gives +o status to target(s)
+ * DEOP 				USERNAMES			NEEDS POLISHING 				Takes +o status from target(s)
+ * LMGTFY (GOOGLE)		SEARCHQUERY			NOT STARTED 					Return top three search results														TOP3 Google Searchresults for <QUERY>:
+ * 4C (4THREAD)			/board/##			NOT STARTED 					Return thread OP and replycount (inc images & age & last post timestamp)			Board: Animu & Mango  Title: none - Anonymous [SAGE] - OP MESSAGE HERE (144 post, 4 images, last post: 15 minutes ago)
+ * MOGRACAL				(optional)DATE 		NOT STARTED 					Returns events for date (if given) or event coming week if no date is given
+ * YSEARCH (youtube|yt)	QUERY 				NOT STARTED 					Returns first five results and a link to result page from Youtube
+ *
+ */
+
+
 var irc  	= require('./lib/irc.js');
 var util 	= require('util');
 var color 	= require('ansi-color').set;
@@ -88,6 +112,10 @@ var g33kBot = Bot.extend({
 		}
 	},
 
+	actionThread: function( msg, channel ) {
+		c.say( channel, "this method has not been implemented yet");
+	}
+
 	messageTrigger: function ( from, to, txt, message ) {
 		var self = this;
 
@@ -110,6 +138,14 @@ var g33kBot = Bot.extend({
 				fn(msg, target);
 			}
 		}
+		// We didn't find a trigger
+		// TODO:
+		// 1. youtube url parser
+		// 		-> return info from Youtube API
+		// 2. *booru url parser
+		// 		-> Show title, image safety and the likes
+		// 3. generic url parser
+		// 		-> Show page title
 	},
 
 	getArgs: function (msg) {
@@ -128,19 +164,7 @@ function capitaliseFirstLetter(string)
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
-function execV(functionName, context /*, args */) {
-  var args = Array.prototype.slice.call(arguments).splice(2);
-  var namespaces = functionName.split(".");
-  var func = namespaces.pop();
-  for(var i = 0; i < namespaces.length; i++) {
-    context = context[namespaces[i]];
-  }
-  return context[func].apply(this, args);
-}
-
-
 var bot = new g33kBot(c);
-
 var c = new irc.Client(
     'irc.rizon.net',
     'g33kBot',
