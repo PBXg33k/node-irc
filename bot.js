@@ -160,7 +160,7 @@ var g33kBot = Bot.extend({
 				c.say( irchChannel, irc.colors.wrap('red', 'Something went wrong. PBX_g33k!! Fix me you lazy ass developer. ERR:YT01' ));
 				return;
 			}
-			s.parseYoutube(yID);
+			s.parseYoutube(yID, irchChannel);
 		}
 		// We didn't find a trigger
 		// TODO:
@@ -175,14 +175,14 @@ var g33kBot = Bot.extend({
 	 * @param  {string} videoid 	parsed videoid
 	 * @return {object}     		An object containing all information about the video
 	 */
-	parseYoutube: function (videoID) {
+	parseYoutube: function (videoID , irchChannel ) {
 		youtube.videos.list({
 			"part":"id,snippet,statistics",
 			"id":videoID
 		}, function( err, data ){
 			if( err != null )
 			{
-				c.say( irchChannel, irc.colors.wrap('red', 'Something went wrong. PBX_g33k!! Fix me you lazy ass developer. ERR:YT02' ));
+				c.say( irchChannel, irc.colors.wrap('red', 'Something went wrong. PBX_g33k!! Fix me you lazy ass developer. ERR:YT02 ('+videoID+')' ));
 			} else {
 				var items = data.items[0];
 				//for (var i = items.length - 1; i >= 0; i--) {
