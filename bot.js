@@ -22,6 +22,7 @@
  * YSEARCH (youtube|yt)	QUERY 				NOT STARTED 					Returns first five results and a link to result page from Youtube
  * RMUTE 				NONE 				NOT STARTED 					Take +v from a random user for 15 minutes. LIMIT USAGE AND PREVENT  -v from OP 		<BOTNAME> Spins the wheel. <3sec sleep> <BOT> takes voice from <TARGET>.
  * 8BALL 									NOT STARTED
+ * YOUTUBE 									NEEDS POLISHING
  *
  */
 
@@ -129,7 +130,6 @@ var g33kBot = Bot.extend({
 	},
 
 	messageTrigger: function ( from, to, txt, message ) {
-		console.log("FUNC::messageTrigger("+from + "," + to + "," + txt + "," + message+")");
 		var self = this;
 
 		caller = from;
@@ -152,54 +152,21 @@ var g33kBot = Bot.extend({
 			}
 		} else if ( yRaw = /(?:http:\/\/)?w{0,3}\.?youtu\.?be(?:(?:[^' '\n\r]+v=)|(?:[^' '\n\r&#]*\/))([^' '\n\r&#]+)(?:&[^' '\n\r]+)?/gm.exec(msg) ) {
 			var yID = '';
-			if(typeof yRaw[1] != 'undefined'){ yID = yRaw[1];
-			}else if(typeof yRaw[2] != 'undefined'){ yID = yRaw[2];
-			}else{ c.say( irchChannel, irc.colors.wrap('red', 'Something went wrong. PBX_g33k!! Fix me you lazy ass developer. ERR:YT01' )); }
-			console.log("RAWR!!!");
-			console.log(yRaw);
-			console.log(msg);
-			youtube.videos.list({
-				"part":"id,snippet,statistics",
-				"id":yID
-			}, function( err, data ){
-				if( err != null )
-				{
-					console.log("ERR::YOUTUBE");
-					c.say( irchChannel, irc.colors.wrap('red', 'Something went wrong. PBX_g33k!! Fix me you lazy ass developer. ERR:YT02' ));
-				} else {
-					var items = data.items[0];
-					//for (var i = items.length - 1; i >= 0; i--) {
-						var snippet = items.snippet;
-						var statistics = items.statistics;
-						// Example line: youTube: [TITLE] 【IA】Liberator - taishi【Original MMD-PV】 [UPLOADER] Vanguard Sound Studio [VIEWS] 5030 [LIKES] 273 [COMMENTS] 20
-						var line =
-							'\u00031,0You\u00030,4Tube\u000f: \u0002\u000310[TITLE]\u000f ' +
-							snippet.title +
-							' \u0002\u000310[UPLOADER]\u000f ' +
-							snippet.channelTitle +
-							' \u0002\u000310[VIEWS]\u000f ' +
-							statistics.viewCount +
-							' \u0002\u000310[LIKES]\u000f ' +
-							statistics.likeCount +
-							' \u0002\u000310[COMMENTS]\u000f ' +
-							statistics.commentCount
-						;
-						c.say( irchChannel, line );
-					//};
-
-				}
-
-
-
-			});
+			if(typeof yRaw[1] != 'undefined'){
+				yID = yRaw[1];
+			}else if(typeof yRaw[2] != 'undefined'){
+				yID = yRaw[2];
+			}else{
+				c.say( irchChannel, irc.colors.wrap('red', 'Something went wrong. PBX_g33k!! Fix me you lazy ass developer. ERR:YT01' ));
+				return;
+			}
+			s.parseYoutube(yID);
 		}
 		// We didn't find a trigger
 		// TODO:
-		// 1. youtube url parser
-		// 		-> return info from Youtube API
-		// 2. *booru url parser
+		// 1. *booru url parser
 		// 		-> Show title, image safety and the likes
-		// 3. generic url parser
+		// 2. generic url parser
 		// 		-> Show page title
 	},
 
@@ -209,7 +176,34 @@ var g33kBot = Bot.extend({
 	 * @return {object}     		An object containing all information about the video
 	 */
 	parseYoutube: function (videoID) {
-
+		youtube.videos.list({
+			"part":"id,snippet,statistics",
+			"id":videoID
+		}, function( err, data ){
+			if( err != null )
+			{
+				c.say( irchChannel, irc.colors.wrap('red', 'Something went wrong. PBX_g33k!! Fix me you lazy ass developer. ERR:YT02' ));
+			} else {
+				var items = data.items[0];
+				//for (var i = items.length - 1; i >= 0; i--) {
+					var snippet = items.snippet;
+					var statistics = items.statistics;
+					// Example line: youTube: [TITLE] 【IA】Liberator - taishi【Original MMD-PV】 [UPLOADER] Vanguard Sound Studio [VIEWS] 5030 [LIKES] 273 [COMMENTS] 20
+					var line =
+						'\u00031,0You\u00030,4Tube\u000f: \u0002\u000310[TITLE]\u000f ' +
+						snippet.title +
+						' \u0002\u000310[UPLOADER]\u000f ' +
+						snippet.channelTitle +
+						' \u0002\u000310[VIEWS]\u000f ' +
+						statistics.viewCount +
+						' \u0002\u000310[LIKES]\u000f ' +
+						statistics.likeCount +
+						' \u0002\u000310[COMMENTS]\u000f ' +
+						statistics.commentCount;
+					c.say( irchChannel, line );
+				//};
+			}
+		});
 	},
 
 	getArgs: function (msg) {
