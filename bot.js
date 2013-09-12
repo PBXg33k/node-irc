@@ -20,6 +20,8 @@
  * 4C (4THREAD)			/board/##			NOT STARTED 					Return thread OP and replycount (inc images & age & last post timestamp)			Board: Animu & Mango  Title: none - Anonymous [SAGE] - OP MESSAGE HERE (144 post, 4 images, last post: 15 minutes ago)
  * MOGRACAL				(optional)DATE 		NOT STARTED 					Returns events for date (if given) or event coming week if no date is given
  * YSEARCH (youtube|yt)	QUERY 				NOT STARTED 					Returns first five results and a link to result page from Youtube
+ * RMUTE 				NONE 				NOT STARTED 					Take +v from a random user for 15 minutes. LIMIT USAGE AND PREVENT  -v from OP 		<BOTNAME> Spins the wheel. <3sec sleep> <BOT> takes voice from <TARGET>.
+ * 8BALL 									NOT STARTED
  *
  */
 
@@ -30,8 +32,14 @@ var color 	= require('ansi-color').set;
 var jsdom 	= require('jsdom').jsdom;
 var http 	= require('http');
 var https	= require('https');
-
+var youtube = require('youtube-api');
 var window = jsdom().createWindow();
+
+// Initialize stuff
+youtube.authenticate({
+	type:"oath",
+	token: "secret"
+});
 
 function Bot() {};
 
@@ -81,9 +89,13 @@ var g33kBot = Bot.extend({
 		}
 	},
 
+	checkPermission: function( caller ) {
+		return ( s.admins.indexOf(caller) != -1 ); // need to extend this ASAP
+	},
+
 	actionOp: function ( msg, channel ) {
 		// Check if admin calls the action
-		if( this.checkPermission(this.caller) ) {
+		if( s.checkPermission(this.caller) ) {
 			var targets = s.getArgs(msg);
 			for (var i = targets.length - 1; i >= 0; i--) {
 				c.send('MODE', channel, '+o', targets[i]);
@@ -95,7 +107,7 @@ var g33kBot = Bot.extend({
 	},
 
 	actionDeop: function ( msg, channel ) {
-		if( this.checkPermission(this.caller) ) {
+		if( s.checkPermission(this.caller) ) {
 			var targets = s.getArgs(msg);
 			for (var i = targets.length - 1; i >= 0; i--) {
 				c.send('MODE', channel, '-o', targets[i]);
@@ -107,22 +119,24 @@ var g33kBot = Bot.extend({
 	},
 
 	actionDie: function () {
-		if( this.checkPermission(this.caller) ) {
+		if( s.checkPermission(this.caller) ) {
 			process.exit(0);
 		}
 	},
 
 	actionThread: function( msg, channel ) {
 		c.say( channel, "this method has not been implemented yet");
-	}
+	},
 
 	messageTrigger: function ( from, to, txt, message ) {
+		console.log("FUNC::messageTrigger("+from + "," + to + "," + txt + "," + message+")");
 		var self = this;
 
 		caller = from;
 		target = to;
 		var msg = txt;
 		var trigger = msg.substr(0,1);
+		var irchChannel = to;//message.args[1];
 		// Search for triggers
 		if( self.conf.triggers.indexOf( trigger ) != -1 )
 		{
@@ -130,13 +144,54 @@ var g33kBot = Bot.extend({
 			if(endMethodName == -1) endMethodName = msg;
 			var methodName = "action" + capitaliseFirstLetter(msg.substr(1,endMethodName)).trim();
 			var fn = self[methodName];
-			var channel = message.args[1];
 
 			if( typeof fn == 'function' || typeof fn == 'object')
 			{
-				c.say( channel, 'note: i am broken');
+				//c.say( irchChannel, 'note: i am broken');
 				fn(msg, target);
 			}
+		} else if ( yRaw = /(?:http:\/\/)?w{0,3}\.?youtu\.?be(?:(?:[^' '\n\r]+v=)|(?:[^' '\n\r&#]*\/))([^' '\n\r&#]+)(?:&[^' '\n\r]+)?/gm.exec(msg) ) {
+			var yID = '';
+			if(typeof yRaw[1] != 'undefined'){ yID = yRaw[1];
+			}else if(typeof yRaw[2] != 'undefined'){ yID = yRaw[2];
+			}else{ c.say( irchChannel, irc.colors.wrap('red', 'Something went wrong. PBX_g33k!! Fix me you lazy ass developer. ERR:YT01' )); }
+			console.log("RAWR!!!");
+			console.log(yRaw);
+			console.log(msg);
+			youtube.videos.list({
+				"part":"id,snippet,statistics",
+				"id":yID
+			}, function( err, data ){
+				if( err != null )
+				{
+					console.log("ERR::YOUTUBE");
+					c.say( irchChannel, irc.colors.wrap('red', 'Something went wrong. PBX_g33k!! Fix me you lazy ass developer. ERR:YT02' ));
+				} else {
+					var items = data.items[0];
+					//for (var i = items.length - 1; i >= 0; i--) {
+						var snippet = items.snippet;
+						var statistics = items.statistics;
+						// Example line: youTube: [TITLE] 【IA】Liberator - taishi【Original MMD-PV】 [UPLOADER] Vanguard Sound Studio [VIEWS] 5030 [LIKES] 273 [COMMENTS] 20
+						var line =
+							'\u00031,0You\u00030,4Tube\u000f: \u0002\u000310[TITLE]\u000f ' +
+							snippet.title +
+							' \u0002\u000310[UPLOADER]\u000f ' +
+							snippet.channelTitle +
+							' \u0002\u000310[VIEWS]\u000f ' +
+							statistics.viewCount +
+							' \u0002\u000310[LIKES]\u000f ' +
+							statistics.likeCount +
+							' \u0002\u000310[COMMENTS]\u000f ' +
+							statistics.commentCount
+						;
+						c.say( irchChannel, line );
+					//};
+
+				}
+
+
+
+			});
 		}
 		// We didn't find a trigger
 		// TODO:
@@ -148,8 +203,13 @@ var g33kBot = Bot.extend({
 		// 		-> Show page title
 	},
 
-	checkPermission: function( caller ) {
-		return ( s.admins.indexOf(caller) != -1 ); // need to extend this ASAP
+	/**
+	 * Returns video information by passing a youtube URL
+	 * @param  {string} videoid 	parsed videoid
+	 * @return {object}     		An object containing all information about the video
+	 */
+	parseYoutube: function (videoID) {
+
 	},
 
 	getArgs: function (msg) {
